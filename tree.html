@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Collapsible Tree of Life Menu</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+  }
+  ul {
+    list-style-type: none;
+    padding-left: 1em;
+    line-height: 1.5em;
+  }
+  .caret {
+    cursor: pointer;
+    user-select: none;
+    font-weight: bold;
+  }
+  .caret::before {
+    content: "▶";
+    color: black;
+    display: inline-block;
+    margin-right: 6px;
+    transform: rotate(0deg);
+    transition: transform 0.2s;
+  }
+  .caret-down::before {
+    transform: rotate(90deg);
+  }
+  .nested {
+    display: none;
+  }
+  .active {
+    display: block;
+  }
+  .node-label {
+    cursor: pointer;
+  }
+  .rank {
+    color: #888;
+    font-size: 0.85em;
+    margin-left: 6px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<h2>Tree of Life (Vertebrates Example)</h2>
+
+<div id="tree-container">Loading tree data...</div>
+
+<script>
+  async function fetchTreeData() {
+    try {
+      const response = await fetch('tree.json');
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      buildTree(data);
+    } catch (error) {
+      document.getElementById('tree-container').textContent = 'Failed to load tree data.';
+      console.error('Error fetching tree data:', error);
+    }
+  }
+
+  function createTreeNode(node) {
+    const li = document.createElement('li');
+
+    if (node.children && node.children.length > 0) {
+      const caretSpan = document.createElement('span');
+      caretSpan.classList.add('caret');
+      caretSpan.textContent = node.name;
+
+      const rankSpan = document.createElement('span');
+      rankSpan.classList.add('rank');
+      rankSpan.textContent = `(${node.rank})`;
+
+      caretSpan.appendChild(rankSpan);
+      li.appendChild(caretSpan);
+
+      const ul = document.createElement('ul');
+      ul.classList.add('nested');
+
+      node.children.forEach(child => {
+        ul.appendChild(createTreeNode(child));
+      });
+      li.appendChild(ul);
+
+      caretSpan.addEventListener('click', () => {
+        caretSpan.classList.toggle('caret-down');
+        ul.classList.toggle('active');
+      });
+    } else {
+      // Leaf node
+      const span = document.createElement('span');
+      span.classList.add('node-label');
+      span.textContent = node.name;
+
+      const rankSpan = document.createElement('span');
+      rankSpan.classList.add('rank');
+      rankSpan.textContent = `(${node.rank})`;
+
+      span.appendChild(rankSpan);
+      li.appendChild(span);
+    }
+
+    return li;
+  }
+
+  function buildTree(data) {
+    const container = document.getElementById('tree-container');
+    container.textContent = ''; // clear loading message
+
+    const ul = document.createElement('ul');
+
+    // Assuming your JSON root is inside an object key like 'vertebrates'
+    for (const rootKey in data) {
+      if (Object.hasOwnProperty.call(data, rootKey)) {
+        ul.appendChild(createTreeNode(data[rootKey]));
+      }
+    }
+
+    container.appendChild(ul);
+  }
+
+  // Start fetching the JSON file
+  fetchTreeData();
+</script>
+
+</body>
+</html>
